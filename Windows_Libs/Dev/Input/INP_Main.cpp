@@ -549,7 +549,7 @@ bool CInput::UpdateJoypads()
 {
 	assert(m_bJoypadMapArrayIsSetup);
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < MAX_JOYPADS; i++)
 	{
 		JOYPAD* pThisPad = &m_Joypads[i];
 
@@ -563,7 +563,7 @@ bool CInput::UpdateJoypads()
 		pThisPad->m_ucRightTriggerState = 0;
 	}
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < MAX_JOYPADS; i++)
 	{
 		if (!m_Joypads[i].m_bIsDisabled)
 		{
@@ -685,7 +685,7 @@ void CInput::InitTime(void)
 	QueryPerformanceFrequency(&qwTicksPerSec);
 
 	m_fTickToSeconds = 1.0 / (float)(int)qwTicksPerSec.LowPart;
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < MAX_JOYPADS; i++)
 	{
 		m_LastActivityTime[i].QuadPart = 0;
 	}

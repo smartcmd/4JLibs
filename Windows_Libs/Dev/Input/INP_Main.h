@@ -121,7 +121,7 @@ public:
 
 	BYTE gap0[16];
 
-	JOYPAD m_Joypads[4];
+	JOYPAD m_Joypads[MAX_JOYPADS];
 
 	int m_iDeadzone;
 	int m_iMovementRangeMax;
@@ -150,8 +150,8 @@ public:
 	float m_fRepeatDelaySecs;
 	float m_fRepeatRateSecs;
 
-	TimeInfo m_Timers[4][24];
-	LARGE_INTEGER m_LastActivityTime[4];
+	TimeInfo m_Timers[MAX_JOYPADS][24];
+	LARGE_INTEGER m_LastActivityTime[MAX_JOYPADS];
 
 	char* m_sDebugSequenceName;
 	unsigned int m_uiDebugSequenceIndex;
