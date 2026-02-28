@@ -150,6 +150,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="4J_Storage.h" />
+    <ClInclude Include="extraX64.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="STO_DLC.h" />
     <ClInclude Include="STO_Main.h" />

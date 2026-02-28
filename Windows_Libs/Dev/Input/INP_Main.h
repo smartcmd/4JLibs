@@ -68,6 +68,8 @@ public:
 		bool m_bInitialPressHandled;
 	};
 
+	CInput();
+
 	void				Initialise(int iInputStateC, unsigned char ucMapC, unsigned char ucActionC, unsigned char ucMenuActionC);
 	void				Tick(void);
 

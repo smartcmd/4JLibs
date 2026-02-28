@@ -8,4 +8,8 @@
 #include <assert.h>
 #include <Xinput.h>
 
+typedef unsigned __int64 __uint64;
+
+#include "extraX64.h"
+
 #endif //PCH_H

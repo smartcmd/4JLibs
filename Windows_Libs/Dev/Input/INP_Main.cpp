@@ -2,6 +2,24 @@
 
 CInput InternalInputManager;
 
+CInput::CInput()
+{
+	m_ForceFeedback = CForceFeedback();
+	m_Keyboard = CKeyboard();
+
+	m_uiSigninJoypadMask = 0;
+	for (int i = 0; i < 4; ++i)
+		m_bIsMenuDisplayed[i] = 0;
+
+	InitTime();
+
+	m_fRepeatDelaySecs = 0.5f;
+	m_fRepeatRateSecs = 0.8f;
+	m_sDebugSequenceName = 0;
+	m_uiDebugSequenceIndex = 0;
+	m_pDebugSequenceFn = 0;
+}
+
 void CInput::Initialise(int iInputStateC, unsigned char ucMapC, unsigned char ucActionC, unsigned char ucMenuActionC)
 {
 	assert(iInputStateC>0);
