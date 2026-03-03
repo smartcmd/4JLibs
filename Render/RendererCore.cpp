@@ -418,70 +418,49 @@ void Renderer::Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain)
     const float clearColour[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     SetClearColour(clearColour);
 
-    UINT backBufferSampleCount = 1;
-    UINT backBufferSampleQuality = 0;
+    m_pDeviceContext->OMGetRenderTargets(1, &this->renderTargetView, &this->depthStencilView);
 
-    ID3D11Texture2D *backBuffer = NULL;
-    pSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
-    if (backBuffer)
-    {
-        D3D11_TEXTURE2D_DESC backDesc = {};
-        backBuffer->GetDesc(&backDesc);
-        backBufferWidth = backDesc.Width;
-        backBufferHeight = backDesc.Height;
-        backBufferSampleCount = backDesc.SampleDesc.Count;
-        backBufferSampleQuality = backDesc.SampleDesc.Quality;
+    D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+    rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 
-        m_pDevice->CreateRenderTargetView(backBuffer, NULL, &renderTargetView);
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = 1;
+    srvDesc.Texture2D.MostDetailedMip = 0;
 
-        D3D11_TEXTURE2D_DESC srvDesc = backDesc;
-        srvDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-        srvDesc.MiscFlags = 0;
+    ID3D11Resource *pBackBufferResource = nullptr;
+    this->renderTargetView->GetResource(&pBackBufferResource);
 
-        ID3D11Texture2D *srvTexture = NULL;
-        m_pDevice->CreateTexture2D(&srvDesc, NULL, &srvTexture);
-        m_pDevice->CreateShaderResourceView(srvTexture, NULL, &renderTargetShaderResourceView);
-        
-        srvTexture->Release();
-        backBuffer->Release();
-    }
+    ID3D11Texture2D *pBackBufferTexture = nullptr;
+    pBackBufferResource->QueryInterface(__uuidof(ID3D11Texture2D), (void **)&pBackBufferTexture);
 
-    ID3D11RenderTargetView *boundRTV = NULL;
-    m_pDeviceContext->OMGetRenderTargets(1, &boundRTV, &depthStencilView);
-    if (boundRTV) boundRTV->Release();
+    D3D11_TEXTURE2D_DESC texDesc;
+    pBackBufferTexture->GetDesc(&texDesc);
 
-    if (!depthStencilView && backBufferWidth != 0 && backBufferHeight != 0)
-    {
-        D3D11_TEXTURE2D_DESC depthDesc = {};
-        depthDesc.Width = backBufferWidth;
-        depthDesc.Height = backBufferHeight;
-        depthDesc.MipLevels = 1;
-        depthDesc.ArraySize = 1;
-        depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        depthDesc.SampleDesc.Count = backBufferSampleCount;
-        depthDesc.SampleDesc.Quality = backBufferSampleQuality;
-        depthDesc.Usage = D3D11_USAGE_DEFAULT;
-        depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    this->backBufferWidth = texDesc.Width;
+    this->backBufferHeight = texDesc.Height;
+    this->renderTargetTextures[0] = pBackBufferTexture;
 
-        ID3D11Texture2D *depthTexture = NULL;
-        if (SUCCEEDED(m_pDevice->CreateTexture2D(&depthDesc, NULL, &depthTexture)))
-        {
-            m_pDevice->CreateDepthStencilView(depthTexture, NULL, &depthStencilView);
-            depthTexture->Release();
-        }
-    }
+    pDevice->CreateRenderTargetView(pBackBufferTexture, &rtvDesc, &this->renderTargetView);
+    pDevice->CreateShaderResourceView(pBackBufferTexture, &srvDesc, &this->renderTargetShaderResourceView);
 
+    pBackBufferResource->Release();
+
+    D3D11_TEXTURE2D_DESC desc = {};
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = 0;
+    desc.MiscFlags = 0;
     for (UINT i = 0; i < MAX_MIP_LEVELS - 1; ++i)
     {
-        D3D11_TEXTURE2D_DESC desc = {};
         desc.Width = s_auiWidths[i + 1];
         desc.Height = s_auiHeights[i + 1];
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
         HRESULT hr = m_pDevice->CreateTexture2D(&desc, NULL, &renderTargetTextures[i]);
         assert(hr == S_OK);
@@ -510,7 +489,6 @@ void Renderer::Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain)
     TextureBindVertex(-1);
 
     InitializeCriticalSection(&rtl_critical_section100);
-    InitializeCriticalSection(&Renderer::totalAllocCS);
 
     reservedRendererDword1 = 0;
     activeVertexType = -1;
@@ -535,6 +513,8 @@ void Renderer::Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain)
     quadIndexDesc.ByteWidth = 0x30000;
     quadIndexDesc.Usage = D3D11_USAGE_IMMUTABLE;
     quadIndexDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    quadIndexDesc.CPUAccessFlags = 0;
+    quadIndexDesc.MiscFlags = 0;
 
     D3D11_SUBRESOURCE_DATA quadIndexData = {};
     quadIndexData.pSysMem = quadIndices;
