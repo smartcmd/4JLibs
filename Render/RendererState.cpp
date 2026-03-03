@@ -84,11 +84,14 @@ ID3D11RasterizerState *Renderer::GetManagedRasterizerState()
     return state;
 }
 
-ID3D11SamplerState *Renderer::GetManagedSamplerState()
+ID3D11SamplerState *Renderer::GetManagedSamplerState(int layer)
 {
     PROFILER_SCOPE("Renderer::GetManagedSamplerState", "GetManagedSamplerState", MP_ORCHID1)
     Context &c = getContext();
-    const int key = m_textures[c.textureIdx].samplerParams;
+    if (layer < 0 || layer >= MAX_TEXTURE_LAYERS)
+        layer = 0;
+
+    const int key = m_textures[c.boundTextureIndex[layer]].samplerParams;
 
     auto it = managedSamplerStates.find(key);
     if (it != managedSamplerStates.end())

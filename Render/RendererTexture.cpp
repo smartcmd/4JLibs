@@ -96,17 +96,33 @@ void Renderer::TextureBind(int idx)
 {
     PROFILER_SCOPE("Renderer::TextureBind", "TextureBind", MP_PURPLE4)
     if (idx == -1)
+    {
+        for (int layer = 0; layer < MAX_TEXTURE_LAYERS; ++layer)
+            TextureBind(layer, -1);
+        return;
+    }
+
+    TextureBind(0, idx);
+}
+
+void Renderer::TextureBind(int layer, int idx)
+{
+    PROFILER_SCOPE("Renderer::TextureBindLayer", "TextureBindLayer", MP_PURPLE4)
+    if (layer < 0 || layer >= MAX_TEXTURE_LAYERS)
+        return;
+
+    if (idx == -1)
         idx = defaultTextureIndex;
 
     Context& c = getContext();
 
     if (c.commandBuffer && c.commandBuffer->isActive)
-        c.commandBuffer->BindTexture(idx);
+        c.commandBuffer->BindTexture(layer, idx);
 
-    c.textureIdx = idx;
-    c.m_pDeviceContext->PSSetShaderResources(0, 1, &m_textures[idx].view);
+    c.boundTextureIndex[layer] = idx;
+    c.m_pDeviceContext->PSSetShaderResources(layer, 1, &m_textures[idx].view);
 
-    UpdateTextureState(false);
+    UpdateTextureState(layer, false);
 }
 
 void Renderer::TextureBindVertex(int idx)
@@ -117,29 +133,29 @@ void Renderer::TextureBindVertex(int idx)
 
     Context& c = getContext();
 
-    c.textureIdx = idx;
+    c.boundTextureIndex[0] = idx;
     c.m_pDeviceContext->VSSetShaderResources(0, 1, &m_textures[idx].view);
 
-    UpdateTextureState(true);
+    UpdateTextureState(0, true);
 }
 
 void Renderer::TextureSetTextureLevels(int levels)
 {
     Context& c = getContext();
-    m_textures[c.textureIdx].mipLevels = levels;
+    m_textures[c.boundTextureIndex[0]].mipLevels = levels;
 }
 
 int Renderer::TextureGetTextureLevels()
 {
     Context& c = getContext();
-    return m_textures[c.textureIdx].mipLevels;
+    return m_textures[c.boundTextureIndex[0]].mipLevels;
 }
 
 void Renderer::TextureData(int width, int height, void* data, int level, C4JRender::eTextureFormat format)
 {
     PROFILER_SCOPE("Renderer::TextureData", "TextureData", MP_PURPLE4)
     Context& c = getContext();
-    int idx = c.textureIdx;
+    int idx = c.boundTextureIndex[0];
 
     m_textures[idx].textureFormat = format;
 
@@ -176,7 +192,7 @@ void Renderer::TextureDataUpdate(int xoffset, int yoffset, int width, int height
 {
     PROFILER_SCOPE("Renderer::TextureDataUpdate", "TextureDataUpdate", MP_PURPLE4)
     Context& c = getContext();
-    int idx = c.textureIdx;
+    int idx = c.boundTextureIndex[0];
 
     D3D11_TEXTURE2D_DESC desc;
     m_textures[idx].texture->GetDesc(&desc);
@@ -202,7 +218,7 @@ void Renderer::TextureDataUpdate(int xoffset, int yoffset, int width, int height
 void Renderer::TextureSetParam(int param, int value)
 {
     Context& c = getContext();
-    int idx = c.textureIdx;
+    int idx = c.boundTextureIndex[0];
 
     switch (param)
     {
@@ -239,15 +255,15 @@ void Renderer::TextureDynamicUpdateEnd()
     // TODO(3UR): this is for a different platform? it's empty in Render_PC.lib but not Render.lib
 }
 
-void Renderer::UpdateTextureState(bool bVertex)
+void Renderer::UpdateTextureState(int layer, bool bVertex)
 {
     Context& c = getContext();
-    ID3D11SamplerState* pSampler = GetManagedSamplerState();
+    ID3D11SamplerState* pSampler = GetManagedSamplerState(layer);
 
     if (bVertex)
         c.m_pDeviceContext->VSSetSamplers(0, 1, &pSampler);
     else
-        c.m_pDeviceContext->PSSetSamplers(0, 1, &pSampler);
+        c.m_pDeviceContext->PSSetSamplers(layer, 1, &pSampler);
 }
 
 HRESULT Renderer::LoadTextureData(const char* szFilename, D3DXIMAGE_INFO* pSrcInfo, int** ppDataOut)

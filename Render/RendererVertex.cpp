@@ -25,6 +25,33 @@ SOFTWARE.
 #include "stdafx.h"
 #include "Renderer.h"
 
+C4JRender::ePixelShaderType Renderer::ResolvePixelShaderType(C4JRender::ePixelShaderType psType)
+{
+    if (psType != C4JRender::PIXEL_SHADER_TYPE_STANDARD)
+        return psType;
+
+    const Context &c = getContext();
+    int layerCount = 1;
+
+    for (int layer = 1; layer < MAX_TEXTURE_LAYERS; ++layer)
+    {
+        if (c.boundTextureIndex[layer] != defaultTextureIndex)
+            layerCount = layer + 1;
+    }
+
+    switch (layerCount)
+    {
+    case 4:
+        return C4JRender::PIXEL_SHADER_TYPE_STANDARD4;
+    case 3:
+        return C4JRender::PIXEL_SHADER_TYPE_STANDARD3;
+    case 2:
+        return C4JRender::PIXEL_SHADER_TYPE_STANDARD2;
+    default:
+        return C4JRender::PIXEL_SHADER_TYPE_STANDARD;
+    }
+}
+
 void Renderer::DrawVertexBuffer(C4JRender::ePrimitiveType PrimitiveType, int count, ID3D11Buffer *buffer, C4JRender::eVertexType vType,
                                 C4JRender::ePixelShaderType psType)
 {
@@ -67,10 +94,11 @@ void Renderer::DrawVertexSetup(C4JRender::eVertexType vType, C4JRender::ePixelSh
         activeVertexType = effectiveVertexType;
     }
 
-    if (psType != activePixelType)
+    const C4JRender::ePixelShaderType effectivePixelType = ResolvePixelShaderType(psType);
+    if (effectivePixelType != activePixelType)
     {
-        d3d11->PSSetShader(pixelShaderTable[psType], NULL, 0);
-        activePixelType = psType;
+        d3d11->PSSetShader(pixelShaderTable[effectivePixelType], NULL, 0);
+        activePixelType = effectivePixelType;
     }
 
     D3D11_MAPPED_SUBRESOURCE mapped = {};

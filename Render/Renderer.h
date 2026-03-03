@@ -38,6 +38,7 @@ SOFTWARE.
 #define STACK_TYPES    4
 #define STACK_SIZE     16
 #define MAX_MIP_LEVELS 5
+#define MAX_TEXTURE_LAYERS 4
 #define MAX_TEXTURES 512
 
 #define NUM_COMMAND_HANDLES 0x800000
@@ -95,6 +96,7 @@ public:
     int TextureCreate();
     void TextureFree(int idx);
     void TextureBind(int idx);
+    void TextureBind(int layer, int idx);
     void TextureBindVertex(int idx);
     void TextureSetTextureLevels(int levels);
     int TextureGetTextureLevels();
@@ -155,12 +157,13 @@ private:
     void UpdateLightingState();
     void UpdateViewportState();
     void UpdateFogState();
-    void UpdateTextureState(bool vertexSampler);
+    void UpdateTextureState(int layer, bool vertexSampler);
     void MultWithStack(DirectX::XMMATRIX matrix);
     ID3D11DepthStencilState *GetManagedDepthStencilState();
     ID3D11BlendState *GetManagedBlendState();
     ID3D11RasterizerState *GetManagedRasterizerState();
-    ID3D11SamplerState *GetManagedSamplerState();
+    ID3D11SamplerState *GetManagedSamplerState(int layer);
+    C4JRender::ePixelShaderType ResolvePixelShaderType(C4JRender::ePixelShaderType psType);
     void DeleteInternalBuffer(int index);
     Renderer::Context &getContext();
 public:
@@ -211,7 +214,7 @@ public:
         bool IsBusy();
         void AddMatrix(const float *matrix);
         void AddVertices(unsigned int stride, unsigned int count, void *dataIn, Renderer::Context &c);
-        void BindTexture(int idx);
+        void BindTexture(int layer, int idx);
         void SetColor(float r, float g, float b, float a);
         void SetDepthFunc(int func);
         void SetDepthMask(bool enable);
@@ -250,6 +253,7 @@ public:
 
                 struct
                 {
+                    unsigned int m_texture_layer;
                     unsigned int m_texture_index;
                 } bind_texture;
 
@@ -355,7 +359,7 @@ public:
         bool matrixDirty[MATRIX_MODE_MODELVIEW_MAX];
         DWORD stackPos[MATRIX_MODE_MODELVIEW_MAX];
         DWORD stackType;
-        DWORD textureIdx;
+        DWORD boundTextureIndex[MAX_TEXTURE_LAYERS];
         bool faceCullEnabled;
         bool depthTestEnabled;
         bool alphaTestEnabled;

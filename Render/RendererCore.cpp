@@ -65,7 +65,6 @@ Renderer::Context::Context(ID3D11Device* device, ID3D11DeviceContext* deviceCont
     , userAnnotation(NULL)
     , annotateDepth(0)
     , stackType(0)
-    , textureIdx(0)
     , faceCullEnabled(true)
     , depthTestEnabled(true)
     , depthWriteEnabled(true)
@@ -112,6 +111,7 @@ Renderer::Context::Context(ID3D11Device* device, ID3D11DeviceContext* deviceCont
     memset(matrixStacks, 0, sizeof(matrixStacks));
     memset(matrixDirty, 0, sizeof(matrixDirty));
     memset(stackPos, 0, sizeof(stackPos));
+    memset(boundTextureIndex, 0, sizeof(boundTextureIndex));
     memset(lightEnabled, 0, sizeof(lightEnabled));
     memset(lightDirection, 0, sizeof(lightDirection));
     memset(lightColour, 0, sizeof(lightColour));
@@ -725,6 +725,9 @@ void Renderer::SetupShaders()
     m_pDevice->CreateVertexShader(g_main_VS_ScreenClear, sizeof(g_main_VS_ScreenClear), NULL, &screenClearVertexShader);
 
     m_pDevice->CreatePixelShader(g_main_PS_Standard, sizeof(g_main_PS_Standard), NULL, &pixelShaderTable[C4JRender::PIXEL_SHADER_TYPE_STANDARD]);
+    m_pDevice->CreatePixelShader(PS_Standard2_Data, sizeof(PS_Standard2_Data), NULL, &pixelShaderTable[C4JRender::PIXEL_SHADER_TYPE_STANDARD2]);
+    m_pDevice->CreatePixelShader(PS_Standard3_Data, sizeof(PS_Standard3_Data), NULL, &pixelShaderTable[C4JRender::PIXEL_SHADER_TYPE_STANDARD3]);
+    m_pDevice->CreatePixelShader(PS_Standard4_Data, sizeof(PS_Standard4_Data), NULL, &pixelShaderTable[C4JRender::PIXEL_SHADER_TYPE_STANDARD4]);
     m_pDevice->CreatePixelShader(g_main_PS_TextureProjection, sizeof(g_main_PS_TextureProjection), NULL, &pixelShaderTable[C4JRender::PIXEL_SHADER_TYPE_PROJECTION]);
     m_pDevice->CreatePixelShader(g_main_PS_ForceLOD, sizeof(g_main_PS_ForceLOD), NULL, &pixelShaderTable[C4JRender::PIXEL_SHADER_TYPE_FORCELOD]);
     m_pDevice->CreatePixelShader(g_main_PS_ScreenSpace, sizeof(g_main_PS_ScreenSpace), NULL, &screenSpacePixelShader);

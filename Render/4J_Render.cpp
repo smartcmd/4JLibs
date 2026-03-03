@@ -253,6 +253,11 @@ void C4JRender::TextureBind(int idx)
 	InternalRenderManager.TextureBind(idx);
 }
 
+void C4JRender::TextureBind(int layer, int idx)
+{
+	InternalRenderManager.TextureBind(layer, idx);
+}
+
 void C4JRender::TextureBindVertex(int idx)
 {
 	InternalRenderManager.TextureBindVertex(idx);
