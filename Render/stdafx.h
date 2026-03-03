@@ -24,13 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
-#include <cstdint>
-#include <assert.h>
-#include <Xinput.h>
-#include <vector>
+#include "4JLibs/Platform.h"
 
 #include <d3d11.h>
 #include <d3d11_1.h>

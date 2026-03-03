@@ -15,7 +15,13 @@ Configure and build with CMake on Windows x64 using the same Visual Studio gener
 ```powershell
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_GENERATOR_INSTANCE="C:/Program Files/Microsoft Visual Studio/2022/Community"
 cmake --build build --config Debug
+cmake --install build --config Debug --prefix package
 ```
+
+Installed output layout:
+
+- `package/include/4JLibs`: public headers you can copy into another project
+- `package/lib/Debug` or `package/lib/Release`: static libraries
 
 ## What is implemented?
 

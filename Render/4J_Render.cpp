@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 #include "stdafx.h"
-#include "4J_Render.h"
+#include "4JLibs/4J_Render.h"
 #include "Renderer.h"
 
 C4JRender RenderManager;

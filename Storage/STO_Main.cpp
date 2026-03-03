@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 #include "STO_Main.h"
-#include "4J_Storage.h"
+#include "4JLibs/4J_Storage.h"
 
 CStorage InternalStorageManager;
 

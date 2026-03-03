@@ -36,3 +36,22 @@ add_subdirectory(Input)
 add_subdirectory(Profile)
 add_subdirectory(Render)
 add_subdirectory(Storage)
+
+install(
+    FILES
+        include/4JLibs/4J_Input.h
+        include/4JLibs/4J_Profile.h
+        include/4JLibs/4J_Render.h
+        include/4JLibs/4J_Storage.h
+        include/4JLibs/Platform.h
+        include/4JLibs/extraX64.h
+    DESTINATION include/4JLibs
+)
+
+install(TARGETS
+    4JLibs.Windows.Input
+    4JLibs.Windows.Profile
+    4JLibs.Windows.Render
+    4JLibs.Windows.Storage
+    ARCHIVE DESTINATION lib/$<CONFIG>
+)
