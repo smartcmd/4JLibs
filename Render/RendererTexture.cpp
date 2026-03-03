@@ -30,7 +30,7 @@ unsigned char* dataStart;
 unsigned char *dataCurr;
 unsigned char *dataEnd;
 
-DXGI_FORMAT Renderer::textureFormats[] = { DXGI_FORMAT_B8G8R8A8_UNORM };
+DXGI_FORMAT Renderer::textureFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
 
 void user_write_data_init(unsigned char* pBuffer, int size)
 {
