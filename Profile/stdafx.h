@@ -33,6 +33,6 @@ SOFTWARE.
 
 typedef unsigned __int64 __uint64;
 
-#include "extraX64.h"
+#include "../extraX64.h"
 
 #endif //PCH_H
