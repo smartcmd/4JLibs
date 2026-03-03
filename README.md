@@ -18,6 +18,17 @@ cmake --build build --config Debug
 cmake --install build --config Debug --prefix package
 ```
 
+To build and install both `Debug` and `Release` in one step:
+
+```powershell
+./build-package.cmd
+```
+
+This generates:
+
+- `package/lib/Debug/*_d.lib`
+- `package/lib/Release/*.lib`
+
 Installed output layout:
 
 - `package/include/4JLibs`: public headers you can copy into another project
