@@ -443,7 +443,7 @@ public:
     DWORD presentCount;
     BYTE rendererFlag0;
     BYTE paddingAfterRendererFlag0[3];
-    _RTL_CRITICAL_SECTION rtl_critical_section100;
+    _RTL_CRITICAL_SECTION m_commandBufferCS;
     DWORD activeVertexType;
     DWORD activePixelType;
     C4JRender::eViewportType m_ViewportType;

@@ -491,7 +491,7 @@ void Renderer::CommandBuffer::Render(C4JRender::eVertexType vType, Renderer::Con
 
 bool Renderer::CBuffCall(int index, bool full)
 {
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
 
     bool result = false;
     const int commandIndex = m_commandHandleToIndex[index];
@@ -582,13 +582,13 @@ bool Renderer::CBuffCall(int index, bool full)
         result = true;
     }
 
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
     return result;
 }
 
 void Renderer::CBuffClear(int index)
 {
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
 
     std::int16_t *externalToInternal = static_cast<std::int16_t *>(m_commandHandleToIndex);
     const int internalIndex = externalToInternal[index];
@@ -598,12 +598,12 @@ void Renderer::CBuffClear(int index)
         externalToInternal[index] = static_cast<std::int16_t>(-2);
     }
 
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
 }
 
 int Renderer::CBuffCreate(int count)
 {
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
 
     int first = reservedRendererDword1;
     if (first < NUM_COMMAND_HANDLES)
@@ -648,7 +648,7 @@ int Renderer::CBuffCreate(int count)
         first = -1;
     }
 
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
     return first;
 }
 
@@ -658,7 +658,7 @@ void Renderer::CBuffDeferredModeEnd()
     if (!c.deferredModeEnabled)
         return;
 
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
     c.deferredModeEnabled = false;
 
     for (std::vector<Renderer::DeferredCBuff>::const_iterator it = c.deferredBuffers.begin(); it != c.deferredBuffers.end(); ++it)
@@ -683,7 +683,7 @@ void Renderer::CBuffDeferredModeEnd()
     }
 
     c.deferredBuffers.clear();
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
 }
 
 void Renderer::CBuffDeferredModeStart()
@@ -693,7 +693,7 @@ void Renderer::CBuffDeferredModeStart()
 
 void Renderer::CBuffDelete(int first, int count)
 {
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
 
     const int end = first + count;
     for (int i = first; i < end; ++i)
@@ -705,7 +705,7 @@ void Renderer::CBuffDelete(int first, int count)
         m_commandHandleToIndex[i] = static_cast<std::int16_t>(-1);
     }
 
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
 }
 
 void Renderer::CBuffEnd()
@@ -715,7 +715,7 @@ void Renderer::CBuffEnd()
     assert(c.stackType == MATRIX_MODE_MODELVIEW_CBUFF);
     assert(c.stackPos[MATRIX_MODE_MODELVIEW_CBUFF] == 0);
 
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
 
     if (c.deferredModeEnabled)
     {
@@ -751,7 +751,7 @@ void Renderer::CBuffEnd()
     c.commandBuffer->EndRecording(m_pDevice);
     c.commandBuffer = NULL;
 
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
 }
 
 void Renderer::CBuffLockStaticCreations()
@@ -765,11 +765,11 @@ int Renderer::CBuffSize(int index)
         return totalAlloc < 0 ? 0 : totalAlloc;
 
     unsigned int size = 0;
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
     const int commandIndex = m_commandHandleToIndex[index];
     if (commandIndex >= 0)
         size = static_cast<unsigned int>(m_commandBuffers[commandIndex]->GetAllocated());
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
     return size;
 }
 
@@ -789,7 +789,7 @@ void Renderer::CBuffStart(int index, bool full)
 
 void Renderer::CBuffTick()
 {
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
 
     const int firstPending = MAX_COMMAND_BUFFERS - static_cast<int>(reservedRendererDword3);
     for (int i = firstPending; i < MAX_COMMAND_BUFFERS; ++i)
@@ -801,12 +801,12 @@ void Renderer::CBuffTick()
     }
 
     reservedRendererDword3 = 0;
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
 }
 
 void Renderer::DeleteInternalBuffer(int index)
 {
-    EnterCriticalSection(&rtl_critical_section100);
+    EnterCriticalSection(&m_commandBufferCS);
 
     ++reservedRendererDword3;
     const int recycledSlot = MAX_COMMAND_BUFFERS - static_cast<int>(reservedRendererDword3);
@@ -828,5 +828,5 @@ void Renderer::DeleteInternalBuffer(int index)
         m_commandIndexToHandle[index] = commandIndex;
     }
 
-    LeaveCriticalSection(&rtl_critical_section100);
+    LeaveCriticalSection(&m_commandBufferCS);
 }

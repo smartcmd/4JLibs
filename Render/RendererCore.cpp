@@ -488,7 +488,7 @@ void Renderer::Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain)
     StateSetVertexTextureUV(0.0f, 0.0f);
     TextureBindVertex(-1);
 
-    InitializeCriticalSection(&rtl_critical_section100);
+    InitializeCriticalSection(&m_commandBufferCS);
 
     reservedRendererDword1 = 0;
     activeVertexType = -1;

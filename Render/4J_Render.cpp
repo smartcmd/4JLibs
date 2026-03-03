@@ -30,9 +30,7 @@ C4JRender RenderManager;
 
 void C4JRender::Tick()
 {
-#if _DEBUG
 	InternalRenderManager.CBuffTick();
-#endif
 }
 
 void C4JRender::UpdateGamma(unsigned short usGamma)
