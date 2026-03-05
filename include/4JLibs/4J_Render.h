@@ -2,9 +2,6 @@
 
 #include "Platform.h"
 
-#include <d3d11.h>
-#include <d3d11_1.h>
-
 class ImageFileBuffer 
 {
 public:
@@ -32,10 +29,10 @@ typedef struct
 }D3DXIMAGE_INFO;
 
 typedef struct _XSOCIAL_PREVIEWIMAGE {
-    BYTE *pBytes;
-    DWORD Pitch;
-    DWORD Width;
-    DWORD Height;
+    uint8_t *pBytes;
+    uint32_t Pitch;
+    uint32_t Width;
+    uint32_t Height;
 //    D3DFORMAT Format;
 } XSOCIAL_PREVIEWIMAGE, *PXSOCIAL_PREVIEWIMAGE;
 
@@ -60,12 +57,12 @@ public:
 	void Set_matrixDirty();
 
 	// Core
-	void Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain);
+	void Initialise(VkDevice *pDevice, VkSwapchainKHR *pSwapChain);
 	void InitialiseContext();
 	void StartFrame();
 	void DoScreenGrabOnNextPresent();
 	void Present();
-	void Clear(int flags, D3D11_RECT *pRect = NULL);
+	void Clear(int flags, VkRect2D *pRect = NULL);
 	void SetClearColour(const float colourRGBA[4]);
 	bool IsWidescreen();
 	bool IsHiDef();
@@ -79,7 +76,7 @@ public:
 	// Vertex data handling
 	typedef enum
 	{
-		VERTEX_TYPE_PF3_TF2_CB4_NB4_XW1,		// Position 3 x float, texture 2 x float, colour 4 x byte, normal 4 x byte, padding 1 DWORD
+		VERTEX_TYPE_PF3_TF2_CB4_NB4_XW1,		// Position 3 x float, texture 2 x float, colour 4 x byte, normal 4 x byte, padding 1 uint32_t
 		VERTEX_TYPE_COMPRESSED,					// Compressed format - see comment at top of VS_PS3_TS2_CS1.hlsl for description of layout
 		VERTEX_TYPE_PF3_TF2_CB4_NB4_XW1_LIT,	// as VERTEX_TYPE_PF3_TF2_CB4_NB4_XW1 with lighting applied,
 		VERTEX_TYPE_PF3_TF2_CB4_NB4_XW1_TEXGEN, // as VERTEX_TYPE_PF3_TF2_CB4_NB4_XW1 with tex gen
@@ -123,7 +120,7 @@ public:
 	} ePrimitiveType;
 
 	void DrawVertices(ePrimitiveType PrimitiveType, int count, void *dataIn, eVertexType vType, C4JRender::ePixelShaderType psType);
-	void DrawVertexBuffer(ePrimitiveType PrimitiveType, int count, ID3D11Buffer *buffer, C4JRender::eVertexType vType, C4JRender::ePixelShaderType psType);
+	void DrawVertexBuffer(ePrimitiveType PrimitiveType, int count, VkBuffer *buffer, C4JRender::eVertexType vType, C4JRender::ePixelShaderType psType);
 
 	// Command buffers
 	void CBuffLockStaticCreations();
@@ -162,12 +159,12 @@ public:
 	void TextureSetParam(int param, int value);
 	void TextureDynamicUpdateStart();
 	void TextureDynamicUpdateEnd();
-	HRESULT LoadTextureData(const char *szFilename,D3DXIMAGE_INFO *pSrcInfo, int **ppDataOut);
-	HRESULT LoadTextureData(BYTE *pbData, DWORD dwBytes,D3DXIMAGE_INFO *pSrcInfo, int **ppDataOut);
-	HRESULT SaveTextureData(const char *szFilename, D3DXIMAGE_INFO *pSrcInfo, int *ppDataOut);
-	HRESULT SaveTextureDataToMemory(void *pOutput, int outputCapacity, int *outputLength, int width, int height, int *ppDataIn);
+	std::error_code LoadTextureData(const char *szFilename,D3DXIMAGE_INFO *pSrcInfo, int **ppDataOut);
+	std::error_code LoadTextureData(uint8_t *pbData, uint32_t dwBytes,D3DXIMAGE_INFO *pSrcInfo, int **ppDataOut);
+	std::error_code SaveTextureData(const char *szFilename, D3DXIMAGE_INFO *pSrcInfo, int *ppDataOut);
+	std::error_code SaveTextureDataToMemory(void *pOutput, int outputCapacity, int *outputLength, int width, int height, int *ppDataIn);
 	void TextureGetStats();
-	ID3D11ShaderResourceView  *TextureGetTexture(int idx);
+	VkImageView *TextureGetTexture(int idx);
 
 	// State control
 	void StateSetColour(float r, float g, float b, float a);
@@ -203,7 +200,7 @@ public:
 	void StateSetForceLOD(int LOD);
 
 	// Event tracking
-	void BeginEvent(LPCWSTR eventName);
+	void BeginEvent(const char* eventName);
 	void EndEvent();
 
 	// PLM event handling
@@ -255,23 +252,23 @@ const int CLEAR_COLOUR_FLAG = 2;
 const int GL_DEPTH_BUFFER_BIT = CLEAR_DEPTH_FLAG;
 const int GL_COLOR_BUFFER_BIT = CLEAR_COLOUR_FLAG;
 
-const int GL_SRC_ALPHA = D3D11_BLEND_SRC_ALPHA;
-const int GL_ONE_MINUS_SRC_ALPHA = D3D11_BLEND_INV_SRC_ALPHA;
-const int GL_ONE = D3D11_BLEND_ONE;
-const int GL_ZERO = D3D11_BLEND_ZERO;
-const int GL_DST_ALPHA = D3D11_BLEND_DEST_ALPHA;
-const int GL_SRC_COLOR = D3D11_BLEND_SRC_COLOR;
-const int GL_DST_COLOR = D3D11_BLEND_DEST_COLOR;
-const int GL_ONE_MINUS_DST_COLOR = D3D11_BLEND_INV_DEST_COLOR;
-const int GL_ONE_MINUS_SRC_COLOR = D3D11_BLEND_INV_SRC_COLOR;
-const int GL_CONSTANT_ALPHA = D3D11_BLEND_BLEND_FACTOR;
-const int GL_ONE_MINUS_CONSTANT_ALPHA = D3D11_BLEND_INV_BLEND_FACTOR;
+const int GL_SRC_ALPHA = VK_BLEND_FACTOR_CONSTANT_ALPHA;
+const int GL_ONE_MINUS_SRC_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+const int GL_ONE = VK_BLEND_FACTOR_ONE;
+const int GL_ZERO = VK_BLEND_FACTOR_ZERO;
+const int GL_DST_ALPHA = VK_BLEND_FACTOR_DST_ALPHA;
+const int GL_SRC_COLOR = VK_BLEND_FACTOR_SRC_COLOR;
+const int GL_DST_COLOR = VK_BLEND_FACTOR_DST_COLOR;
+const int GL_ONE_MINUS_DST_COLOR = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+const int GL_ONE_MINUS_SRC_COLOR = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+const int GL_CONSTANT_ALPHA = VK_BLEND_FACTOR_CONSTANT_ALPHA;
+const int GL_ONE_MINUS_CONSTANT_ALPHA = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
 
-const int GL_GREATER = D3D11_COMPARISON_GREATER;
-const int GL_EQUAL = D3D11_COMPARISON_EQUAL;
-const int GL_LEQUAL = D3D11_COMPARISON_LESS_EQUAL;
-const int GL_GEQUAL = D3D11_COMPARISON_GREATER_EQUAL;
-const int GL_ALWAYS = D3D11_COMPARISON_ALWAYS;
+const int GL_GREATER = VK_COMPARE_OP_GREATER;
+const int GL_EQUAL = VK_COMPARE_OP_EQUAL;
+const int GL_LEQUAL = VK_COMPARE_OP_LESS_OR_EQUAL;
+const int GL_GEQUAL = VK_COMPARE_OP_GREATER_OR_EQUAL;
+const int GL_ALWAYS = VK_COMPARE_OP_ALWAYS;
 
 const int GL_TEXTURE_MIN_FILTER = 1;
 const int GL_TEXTURE_MAG_FILTER = 2;

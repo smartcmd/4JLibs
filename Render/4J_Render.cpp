@@ -98,7 +98,7 @@ void C4JRender::Set_matrixDirty()
 	InternalRenderManager.Set_matrixDirty();
 }
 
-void C4JRender::Initialise(ID3D11Device* pDevice, IDXGISwapChain* pSwapChain)
+void C4JRender::Initialise(VkDevice *pDevice, VkSwapchainKHR *pSwapChain)
 {
 	InternalRenderManager.Initialise(pDevice, pSwapChain);
 }
@@ -123,7 +123,7 @@ void C4JRender::Present()
 	InternalRenderManager.Present();
 }
 
-void C4JRender::Clear(int flags, D3D11_RECT* pRect)
+void C4JRender::Clear(int flags, VkRect2D* pRect)
 {
 	InternalRenderManager.Clear(flags, pRect);
 }
@@ -178,7 +178,7 @@ void C4JRender::DrawVertices(ePrimitiveType PrimitiveType, int count, void* data
 	InternalRenderManager.DrawVertices(PrimitiveType, count, dataIn, vType, psType);
 }
 
-void C4JRender::DrawVertexBuffer(ePrimitiveType PrimitiveType, int count, ID3D11Buffer* buffer, eVertexType vType, ePixelShaderType psType)
+void C4JRender::DrawVertexBuffer(ePrimitiveType PrimitiveType, int count, VkBuffer* buffer, eVertexType vType, ePixelShaderType psType)
 {
 	InternalRenderManager.DrawVertexBuffer(PrimitiveType, count, buffer, vType, psType);
 }
@@ -298,22 +298,22 @@ void C4JRender::TextureDynamicUpdateEnd()
 	InternalRenderManager.TextureDynamicUpdateEnd();
 }
 
-HRESULT C4JRender::LoadTextureData(const char* szFilename, D3DXIMAGE_INFO* pSrcInfo, int** ppDataOut)
+std::error_code C4JRender::LoadTextureData(const char* szFilename, D3DXIMAGE_INFO* pSrcInfo, int** ppDataOut)
 {
 	return InternalRenderManager.LoadTextureData(szFilename, pSrcInfo, ppDataOut);
 }
 
-HRESULT C4JRender::LoadTextureData(BYTE* pbData, DWORD dwBytes, D3DXIMAGE_INFO* pSrcInfo, int** ppDataOut)
+std::error_code C4JRender::LoadTextureData(uint8_t* pbData, uint32_t dwBytes, D3DXIMAGE_INFO* pSrcInfo, int** ppDataOut)
 {
 	return InternalRenderManager.LoadTextureData(pbData, dwBytes, pSrcInfo, ppDataOut);
 }
 
-HRESULT C4JRender::SaveTextureData(const char* szFilename, D3DXIMAGE_INFO* pSrcInfo, int* ppDataOut)
+std::error_code C4JRender::SaveTextureData(const char* szFilename, D3DXIMAGE_INFO* pSrcInfo, int* ppDataOut)
 {
 	return InternalRenderManager.SaveTextureData(szFilename, pSrcInfo, ppDataOut);
 }
 
-HRESULT C4JRender::SaveTextureDataToMemory(void* pOutput, int outputCapacity, int* outputLength, int width, int height, int* ppDataIn)
+std::error_code C4JRender::SaveTextureDataToMemory(void* pOutput, int outputCapacity, int* outputLength, int width, int height, int* ppDataIn)
 {
 	return InternalRenderManager.SaveTextureDataToMemory(pOutput, outputCapacity, outputLength, width, height, ppDataIn);
 }
@@ -322,7 +322,7 @@ void C4JRender::TextureGetStats()
 {
 }
 
-ID3D11ShaderResourceView* C4JRender::TextureGetTexture(int idx)
+VkImageView* C4JRender::TextureGetTexture(int idx)
 {
 	return InternalRenderManager.TextureGetTexture(idx);
 }
@@ -474,7 +474,7 @@ void C4JRender::StateSetTexGenCol(int col, float x, float y, float z, float w, b
 
 void C4JRender::StateSetStencil(int Function, uint8_t stencil_ref, uint8_t stencil_func_mask, uint8_t stencil_write_mask)
 {
-	InternalRenderManager.StateSetStencil((D3D11_COMPARISON_FUNC)Function, stencil_ref, stencil_func_mask, stencil_write_mask);
+	InternalRenderManager.StateSetStencil((VkCompareOp)Function, stencil_ref, stencil_func_mask, stencil_write_mask);
 }
 
 void C4JRender::StateSetForceLOD(int LOD)
@@ -482,7 +482,7 @@ void C4JRender::StateSetForceLOD(int LOD)
 	InternalRenderManager.StateSetForceLOD(LOD);
 }
 
-void C4JRender::BeginEvent(LPCWSTR eventName)
+void C4JRender::BeginEvent(const char* eventName)
 {
 	InternalRenderManager.BeginEvent(eventName);
 }

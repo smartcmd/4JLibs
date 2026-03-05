@@ -26,6 +26,7 @@ SOFTWARE.
 #include "4JLibs/4J_Render.h"
 #include "Profiler.h"
 #include <cstdint>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -63,12 +64,12 @@ public:
     void MatrixMult(float *mat);
     const float *MatrixGet(int type);
     void Set_matrixDirty();
-    void Initialise(ID3D11Device *pDevice, IDXGISwapChain *pSwapChain);
-    ID3D11DeviceContext *InitialiseContext(bool fromPresent);
+	void Initialise(VkDevice *pDevice, VkSwapchainKHR *pSwapChain);
+    VkQueue *InitialiseContext(bool fromPresent);
     void StartFrame();
     void DoScreenGrabOnNextPresent();
     void Present();
-    void Clear(int flags, D3D11_RECT *pRect);
+    void Clear(int flags, VkRect2D *pRect);
     void SetClearColour(const float colourRGBA[4]);
     bool IsWidescreen();
     bool IsHiDef();
@@ -80,7 +81,7 @@ public:
     void EndConditionalRendering();
     void DrawVertices(C4JRender::ePrimitiveType PrimitiveType, int count, void *dataIn, C4JRender::eVertexType vType,
                       C4JRender::ePixelShaderType psType);
-    void DrawVertexBuffer(C4JRender::ePrimitiveType PrimitiveType, int count, ID3D11Buffer *buffer, C4JRender::eVertexType vType,
+    void DrawVertexBuffer(C4JRender::ePrimitiveType PrimitiveType, int count, VkBuffer *buffer, C4JRender::eVertexType vType,
                           C4JRender::ePixelShaderType psType);
     void CBuffLockStaticCreations();
     int CBuffCreate(int count);
@@ -105,12 +106,12 @@ public:
     void TextureDynamicUpdateEnd();
     void TextureData(int width, int height, void *data, int level, C4JRender::eTextureFormat format);
     void TextureDataUpdate(int xoffset, int yoffset, int width, int height, void *data, int level);
-    HRESULT LoadTextureData(const char *szFilename, D3DXIMAGE_INFO *pSrcInfo, int **ppDataOut);
-    HRESULT LoadTextureData(BYTE *pbData, DWORD dwBytes, D3DXIMAGE_INFO *pSrcInfo, int **ppDataOut);
-    HRESULT SaveTextureData(const char *szFilename, D3DXIMAGE_INFO *pSrcInfo, int *ppDataOut);
-    HRESULT SaveTextureDataToMemory(void *pOutput, int outputCapacity, int *outputLength, int width, int height, int *ppDataIn);
+	std::error_code LoadTextureData(const char *szFilename,D3DXIMAGE_INFO *pSrcInfo, int **ppDataOut);
+	std::error_code LoadTextureData(uint8_t *pbData, uint32_t dwBytes,D3DXIMAGE_INFO *pSrcInfo, int **ppDataOut);
+	std::error_code SaveTextureData(const char *szFilename, D3DXIMAGE_INFO *pSrcInfo, int *ppDataOut);
+	std::error_code SaveTextureDataToMemory(void *pOutput, int outputCapacity, int *outputLength, int width, int height, int *ppDataIn);
     void TextureGetStats();
-    ID3D11ShaderResourceView *TextureGetTexture(int idx);
+	VkImageView *TextureGetTexture(int idx);
     void StateSetColour(float r, float g, float b, float a);
     void StateSetDepthMask(bool enable);
     void StateSetBlendEnable(bool enable);
@@ -140,9 +141,9 @@ public:
     void StateSetViewport(C4JRender::eViewportType viewportType);
     void StateSetEnableViewportClipPlanes(bool enable);
     void StateSetTexGenCol(int col, float x, float y, float z, float w, bool eyeSpace);
-    void StateSetStencil(D3D11_COMPARISON_FUNC function, uint8_t stencil_ref, uint8_t stencil_func_mask, uint8_t stencil_write_mask);
+    void StateSetStencil(VkCompareOp function, uint8_t stencil_ref, uint8_t stencil_func_mask, uint8_t stencil_write_mask);
     void StateSetForceLOD(int LOD);
-    void BeginEvent(LPCWSTR eventName);
+    void BeginEvent(const char* eventName);
     void EndEvent();
     void Suspend();
     bool Suspended();
@@ -158,11 +159,18 @@ private:
     void UpdateViewportState();
     void UpdateFogState();
     void UpdateTextureState(int layer, bool vertexSampler);
-    void MultWithStack(DirectX::XMMATRIX matrix);
-    ID3D11DepthStencilState *GetManagedDepthStencilState();
-    ID3D11BlendState *GetManagedBlendState();
-    ID3D11RasterizerState *GetManagedRasterizerState();
-    ID3D11SamplerState *GetManagedSamplerState(int layer);
+    void MultWithStack(glm::mat4 matrix);
+
+	//TODO: implement alternative for D3D11 pipeline states
+	struct DepthStencilState {};
+	struct BlendState {};
+	struct RasterizerState {};
+	struct SamplerState {};
+
+    DepthStencilState *GetManagedDepthStencilState();
+    BlendState *GetManagedBlendState();
+    RasterizerState *GetManagedRasterizerState();
+    SamplerState *GetManagedSamplerState(int layer);
     C4JRender::ePixelShaderType ResolvePixelShaderType(C4JRender::ePixelShaderType psType);
     void DeleteInternalBuffer(int index);
     Renderer::Context &getContext();
@@ -170,18 +178,18 @@ public:
     struct Texture
     {
         bool allocated;
-        ID3D11Texture2D *texture;
-        ID3D11ShaderResourceView *view;
-        DWORD textureFlags;
-        DWORD mipLevels;
-        DWORD textureFormat;
-        DWORD samplerParams;
+        VkImage *texture;
+        VkImageView *view;
+        uint32_t VkImage;
+        uint32_t mipLevels;
+        uint32_t textureFormat;
+        uint32_t samplerParams;
     };
 
     struct TexgenCBuffer
     {
-        DirectX::XMMATRIX unk0;
-        DirectX::XMMATRIX unk1;
+		glm::mat4 unk0;
+		glm::mat4 unk1;
     };
 
     enum eCommandType
@@ -209,7 +217,7 @@ public:
         CommandBuffer(bool full);
         ~CommandBuffer();
         void StartRecording();
-        void EndRecording(ID3D11Device *device);
+        void EndRecording(VkDevice *device);
         std::uint64_t GetAllocated();
         bool IsBusy();
         void AddMatrix(const float *matrix);
@@ -233,16 +241,16 @@ public:
         struct Command
         {
             Renderer::eCommandType m_command_type;
-            BYTE commandPadding[12];
+            uint8_t commandPadding[12];
 
             union
             {
-                BYTE data[64];
+                uint8_t data[64];
 
                 struct
                 {
                     float m_matrix[16];
-                    // DirectX::XMMATRIX m_matrix;
+                    // glm::mat4 m_matrix;
                 } add_matrix;
 
                 struct
@@ -303,7 +311,7 @@ public:
 
                 struct
                 {
-                    BYTE padding;
+                    uint8_t padding;
                     float m_color[3];
                 } set_light_ambient_colour;
 
@@ -329,12 +337,12 @@ public:
                 } set_face_cull;
             };
         };
-        ID3D11Buffer *m_vertexBuffer;
+        VkBuffer *m_vertexBuffer;
         void *m_vertexData;
         std::uint64_t m_vertexDataLength;
         std::vector<Command> m_commands;
         std::uint64_t m_allocated;
-        BYTE isActive;
+        uint8_t isActive;
     };
 
     struct DeferredCBuff
@@ -343,23 +351,23 @@ public:
         int m_vertex_index;
         int m_vertex_type;
         int m_primitive_type;
-        DirectX::XMMATRIX m_matrix;
+		glm::mat4 m_matrix;
     };
 
     struct Context
     {
         static const unsigned int VERTEX_BUFFER_SIZE = 0x100000;
 
-        Context(ID3D11Device *device, ID3D11DeviceContext *deviceContext);
+        Context(VkDevice *device, VkQueue *deviceContext);
 
-        ID3D11DeviceContext *m_pDeviceContext;
-        ID3DUserDefinedAnnotation *userAnnotation;
-        DWORD annotateDepth;
-        DirectX::XMMATRIX matrixStacks[MATRIX_MODE_MODELVIEW_MAX][STACK_SIZE];
+        VkQueue *m_pDeviceContext;
+        //ID3DUserDefinedAnnotation *userAnnotation; TODO: Implement alternative for ID3DUserDefinedAnnotation
+        uint32_t annotateDepth;
+    	glm::mat4 matrixStacks[MATRIX_MODE_MODELVIEW_MAX][STACK_SIZE];
         bool matrixDirty[MATRIX_MODE_MODELVIEW_MAX];
-        DWORD stackPos[MATRIX_MODE_MODELVIEW_MAX];
-        DWORD stackType;
-        DWORD boundTextureIndex[MAX_TEXTURE_LAYERS];
+        uint32_t stackPos[MATRIX_MODE_MODELVIEW_MAX];
+        uint32_t stackType;
+        uint32_t boundTextureIndex[MAX_TEXTURE_LAYERS];
         bool faceCullEnabled;
         bool depthTestEnabled;
         bool alphaTestEnabled;
@@ -372,108 +380,108 @@ public:
         float fogColourRed;
         float fogColourBlue;
         float fogColourGreen;
-        DWORD fogMode;
+        uint32_t fogMode;
         bool lightingEnabled;
         bool lightEnabled[2];
         bool lightingDirty;
-        DWORD forcedLOD;
-        BYTE paddingAfterForceLOD[4];
-        DirectX::XMFLOAT4 lightDirection[2];
-        DirectX::XMFLOAT4 lightColour[2];
-        DirectX::XMFLOAT4 lightAmbientColour;
-        ID3D11Buffer *m_modelViewMatrix;
-        ID3D11Buffer *m_localTransformMatrix;
-        ID3D11Buffer *m_projectionMatrix;
-        ID3D11Buffer *m_textureMatrix;
-        ID3D11Buffer *m_vertexTexcoordBuffer;
-        ID3D11Buffer *m_fogParamsBuffer;
-        ID3D11Buffer *m_lightingStateBuffer;
-        ID3D11Buffer *m_texGenMatricesBuffer;
-        ID3D11Buffer *m_compressedTranslationBuffer;
-        ID3D11Buffer *m_thumbnailBoundsBuffer;
-        ID3D11Buffer *m_tintColorBuffer;
-        ID3D11Buffer *m_fogColourBuffer;
-        ID3D11Buffer *m_unkColorBuffer;
-        ID3D11Buffer *m_alphaTestBuffer;
-        ID3D11Buffer *m_clearColorBuffer;
-        ID3D11Buffer *m_forcedLODBuffer;
+        uint32_t forcedLOD;
+        uint8_t paddingAfterForceLOD[4];
+		glm::vec4 lightDirection[2];
+        glm::vec4 lightColour[2];
+        glm::vec4 lightAmbientColour;
+        VkBuffer *m_modelViewMatrix;
+        VkBuffer *m_localTransformMatrix;
+        VkBuffer *m_projectionMatrix;
+        VkBuffer *m_textureMatrix;
+        VkBuffer *m_vertexTexcoordBuffer;
+        VkBuffer *m_fogParamsBuffer;
+        VkBuffer *m_lightingStateBuffer;
+        VkBuffer *m_texGenMatricesBuffer;
+        VkBuffer *m_compressedTranslationBuffer;
+        VkBuffer *m_thumbnailBoundsBuffer;
+        VkBuffer *m_tintColorBuffer;
+        VkBuffer *m_fogColourBuffer;
+        VkBuffer *m_unkColorBuffer;
+        VkBuffer *m_alphaTestBuffer;
+        VkBuffer *m_clearColorBuffer;
+        VkBuffer *m_forcedLODBuffer;
         uint64_t dynamicVertexBase;
-        DWORD dynamicVertexOffset;
-        ID3D11Buffer *dynamicVertexBuffer;
-        DirectX::XMMATRIX texGenMatrices[2];
+        uint32_t dynamicVertexOffset;
+        VkBuffer *dynamicVertexBuffer;
+        glm::mat4 texGenMatrices[2];
         Renderer::CommandBuffer *commandBuffer;
-        DWORD recordingBufferIndex;
-        DWORD recordingVertexType;
-        DWORD recordingPrimitiveType;
+        uint32_t recordingBufferIndex;
+        uint32_t recordingVertexType;
+        uint32_t recordingPrimitiveType;
         bool deferredModeEnabled;
         std::vector<DeferredCBuff> deferredBuffers;
-        D3D11_BLEND_DESC blendDesc;
-        D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-        D3D11_RASTERIZER_DESC rasterizerDesc;
+        VkPipelineColorBlendStateCreateInfo blendDesc;
+        VkPipelineDepthStencilStateCreateInfo depthStencilDesc;
+        VkPipelineRasterizationStateCreateInfo rasterizerDesc;
         float blendFactor[4];
     };
 
-    static DWORD tlsIdx;
-    static _RTL_CRITICAL_SECTION totalAllocCS;
-    static DWORD s_auiWidths[];
-    static DWORD s_auiHeights[];
-    static DXGI_FORMAT textureFormats[];
-    static D3D_PRIMITIVE_TOPOLOGY g_topologies[];
+    static uint32_t tlsIdx;
+    static std::mutex totalAllocCS;
+    static uint32_t s_auiWidths[];
+    static uint32_t s_auiHeights[];
+    static VkFormat textureFormats[];
+    static VkPrimitiveTopology g_topologies[];
     static int totalAlloc;
 
     float m_fClearColor[4];
-    ID3D11Device *m_pDevice;
-    ID3D11DeviceContext *m_pDeviceContext;
-    IDXGISwapChain *m_pSwapChain;
-    ID3D11RenderTargetView *renderTargetView;
-    ID3D11RenderTargetView *renderTargetViews[4];
-    ID3D11ShaderResourceView *renderTargetShaderResourceView;
-    ID3D11ShaderResourceView *renderTargetShaderResourceViews[4];
-    ID3D11Texture2D *renderTargetTextures[4];
-    ID3D11DepthStencilView *depthStencilView;
-    ID3D11VertexShader **vertexShaderTable;
-    ID3D11VertexShader *screenSpaceVertexShader;
-    ID3D11VertexShader *screenClearVertexShader;
-    ID3D11PixelShader **pixelShaderTable;
-    ID3D11PixelShader *screenSpacePixelShader;
-    ID3D11PixelShader *screenClearPixelShader;
+    VkDevice *m_pDevice;
+    VkCommandBuffer *m_pDeviceContext;
+    VkSwapchainKHR *m_pSwapChain;
+    VkImageView *renderTargetView;
+    VkImageView *renderTargetViews[4];
+    VkImageView *renderTargetShaderResourceView;
+    VkImageView *renderTargetShaderResourceViews[4];
+    VkImage *renderTargetTextures[4];
+    VkImageView *depthStencilView;
+    VkShaderModule **vertexShaderTable;
+    VkShaderModule *screenSpaceVertexShader;
+    VkShaderModule *screenClearVertexShader;
+    VkShaderModule **pixelShaderTable;
+    VkShaderModule *screenSpacePixelShader;
+    VkShaderModule *screenClearPixelShader;
     unsigned int *vertexStrideTable;
-    ID3D11InputLayout **inputLayoutTable;
-    ID3D11Buffer *quadIndexBuffer;
-    ID3D11Buffer *fanIndexBuffer;
-    DWORD defaultTextureIndex;
-    WORD reservedRendererWord0;
-    BYTE paddingAfterRendererWord0[2];
-    DWORD presentCount;
-    BYTE rendererFlag0;
-    BYTE paddingAfterRendererFlag0[3];
-    _RTL_CRITICAL_SECTION m_commandBufferCS;
-    DWORD activeVertexType;
-    DWORD activePixelType;
+    //ID3D11InputLayout **inputLayoutTable; TODO: find way to implement in vulkan
+    VkBuffer *quadIndexBuffer;
+    VkBuffer *fanIndexBuffer;
+    uint32_t defaultTextureIndex;
+    uint16_t reservedRendererWord0;
+    uint8_t paddingAfterRendererWord0[2];
+    uint32_t presentCount;
+    uint8_t rendererFlag0;
+    uint8_t paddingAfterRendererFlag0[3];
+	std::mutex m_commandBufferCS;
+    uint32_t activeVertexType;
+    uint32_t activePixelType;
     C4JRender::eViewportType m_ViewportType;
-    BYTE reservedRendererByte0;
-    BYTE paddingAfterViewportType[3];
+    uint8_t reservedRendererByte0;
+    uint8_t paddingAfterViewportType[3];
     Renderer::Texture m_textures[512];
-    DWORD backBufferWidth;
-    DWORD backBufferHeight;
-    BYTE reservedRendererByte1;
-    BYTE paddingAfterRendererByte1[3];
-    DWORD reservedRendererDword1;
+    uint32_t backBufferWidth;
+    uint32_t backBufferHeight;
+    uint8_t reservedRendererByte1;
+    uint8_t paddingAfterRendererByte1[3];
+    uint32_t reservedRendererDword1;
     int16_t *m_commandHandleToIndex;
     CommandBuffer **m_commandBuffers;
     uint8_t *m_commandPrimitiveTypes;
-    DirectX::XMMATRIX *m_commandMatrices;
+    glm::mat4 *m_commandMatrices;
     int *m_commandIndexToHandle;
     uint8_t *m_commandVertexTypes;
-    DWORD reservedRendererDword2;
-    DWORD reservedRendererDword3;
-    std::unordered_map<int, ID3D11BlendState *> managedBlendStates;
-    std::unordered_map<int, ID3D11DepthStencilState *> managedDepthStencilStates;
-    std::unordered_map<int, ID3D11SamplerState *> managedSamplerStates;
-    std::unordered_map<int, ID3D11RasterizerState *> managedRasterizerStates;
+    uint32_t reservedRendererDword2;
+    uint32_t reservedRendererDword3;
+    std::unordered_map<int, BlendState *> managedBlendStates;
+    std::unordered_map<int, DepthStencilState *> managedDepthStencilStates;
+    std::unordered_map<int, SamplerState *> managedSamplerStates;
+    std::unordered_map<int, RasterizerState *> managedRasterizerStates;
     bool m_bShouldScreenGrabNextFrame;
     bool m_bSuspended;
-    BYTE paddingAfterSuspendState[2];
+    uint8_t paddingAfterSuspendState[2];
 };
 
 // Singleton

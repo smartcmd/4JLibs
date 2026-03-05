@@ -1,10 +1,14 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
-#include <Xinput.h>
 #include <assert.h>
 #include <cstdint>
+#include <cstdlib>
+#include <system_error>
 
-typedef unsigned __int64 __uint64;
+typedef uint64_t __uint64;
+
+#include <vulkan/vulkan.hpp>
+#include <glm/glm.hpp>
+
+
+
