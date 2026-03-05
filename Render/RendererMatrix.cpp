@@ -25,7 +25,8 @@ SOFTWARE.
 #include "stdafx.h"
 #include "Renderer.h"
 
-#include <cstring>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 const float *Renderer::MatrixGet(int type)
 {
@@ -44,21 +45,21 @@ void Renderer::MatrixMode(int type)
 
 void Renderer::MatrixMult(float *mat)
 {
-    DirectX::XMMATRIX matrix;
+	glm::mat4 matrix;
     std::memcpy(&matrix, mat, sizeof(matrix));
     MultWithStack(matrix);
 }
 
 void Renderer::MatrixOrthogonal(float left, float right, float bottom, float top, float zNear, float zFar)
 {
-    const DirectX::XMMATRIX matrix = DirectX::XMMatrixOrthographicOffCenterRH(left, right, bottom, top, zNear, zFar);
+    const glm::mat4 matrix = glm::orthoRH(left, right, bottom, top, zNear, zFar);
     MultWithStack(matrix);
 }
 
 void Renderer::MatrixPerspective(float fovy, float aspect, float zNear, float zFar)
 {
-    const float fovRadians = fovy * (3.14159274f / 180.0f);
-    const DirectX::XMMATRIX matrix = DirectX::XMMatrixPerspectiveFovRH(fovRadians, aspect, zNear, zFar);
+	const float fovRadians = glm::radians(fovy);
+    const glm::mat4 matrix = glm::perspective(fovRadians, aspect, zNear, zFar);
     MultWithStack(matrix);
 }
 
@@ -87,14 +88,15 @@ void Renderer::MatrixPush()
 
 void Renderer::MatrixRotate(float angle, float x, float y, float z)
 {
-    const DirectX::XMVECTOR axis = DirectX::XMVectorSet(x, y, z, 0.0f);
-    const DirectX::XMMATRIX matrix = DirectX::XMMatrixRotationAxis(axis, angle);
+    const glm::vec3 axis = glm::vec3(x, y, z);
+    const glm::mat4 matrix = glm::rotate(glm::mat4(), angle, axis);
     MultWithStack(matrix);
 }
 
 void Renderer::MatrixScale(float x, float y, float z)
 {
-    const DirectX::XMMATRIX matrix = DirectX::XMMatrixScaling(x, y, z);
+	const glm::vec3 scale = glm::vec3(x,y,z);
+    const glm::mat4 matrix = glm::scale(glm::mat4(), scale);
     MultWithStack(matrix);
 }
 
@@ -103,30 +105,31 @@ void Renderer::MatrixSetIdentity()
     Context &c = getContext();
     const int mode = c.stackType;
     const int depth = c.stackPos[mode];
-    c.matrixStacks[mode][depth] = DirectX::XMMatrixIdentity();
+    c.matrixStacks[mode][depth] = glm::identity<glm::mat4>();	
     c.matrixDirty[mode] = true;
 }
 
 void Renderer::MatrixTranslate(float x, float y, float z)
 {
-    const DirectX::XMMATRIX matrix = DirectX::XMMatrixTranslation(x, y, z);
+	const glm::vec3 translate = glm::vec3(x,y,z);
+    const glm::mat4 matrix = glm::translate(glm::mat4(), translate);
     MultWithStack(matrix);
 }
 
-void Renderer::MultWithStack(DirectX::XMMATRIX matrix)
+void Renderer::MultWithStack(glm::mat4 matrix)
 {
     Context &c = getContext();
     const int mode = c.stackType;
     const int depth = c.stackPos[mode];
-    DirectX::XMMATRIX &current = c.matrixStacks[mode][depth];
-    current = DirectX::XMMatrixMultiply(matrix, current);
+    glm::mat4 &current = c.matrixStacks[mode][depth];
+    current *= matrix;
     c.matrixDirty[mode] = true;
 }
 
 void Renderer::Set_matrixDirty()
 {
     Context &c = getContext();
-    const DirectX::XMMATRIX identity = DirectX::XMMatrixIdentity();
+    const glm::mat4 identity = glm::identity<glm::mat4>();
 
     c.matrixStacks[MATRIX_MODE_MODELVIEW][0] = identity;
     c.matrixStacks[MATRIX_MODE_MODELVIEW_PROJECTION][0] = identity;
